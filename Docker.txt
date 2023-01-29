@@ -1,0 +1,198 @@
+Web-App Interface : Gsuite / Facebook / Skype / Netflix / PayPal - Any program that is accessed over a network connection using HTTP.
+
+Build your app
+Package it
+Run
+
+Creating Web-Applications :
+
+NGnix :
+
+Docker : groupadd docker && usermod -aG docker nick
+
+- Run Image as Container : docker container run -itd --name web-server-ngnix -p 8080:80 ngnix:latest
+
+Docker File  : BUILD
+Docker Images : SHIP
+DOcker Container  : RUN
+
+- Docker file is blue print of Docker Image
+- Docker Images can also be RUN as containers
+- Docker { 
+			Docker Client : Machine or medium through we ( User ) interact with Docker [docker run, docker pull]
+			Docker Host : Perform the task of containerisation - Daemon perform action's asked by docker client - builts docker files and turn them into docker image
+			Docker Register
+			}
+- Docker FILE
+	It's a file with no extention 
+	
+	FROM
+	ARG                      Fundamentals Instruction
+	
+	RUN 
+	ADD | COPY
+	ENV                       Configuration Instruction
+	
+	CMD
+	ENTRYPOINT
+	EXPOSE               Execution Instruction
+	
+	____
+	ARG is used to defined the arguments used by FROM instruction * not necessary to use * declarative language Version = 16.04
+	
+	FROM * must be used * - ubuntu:($Version)
+	
+	RUN - Asks docker to execute the command mentioned with it on top of the base image and the results are commited  as a separate layer on top of the base image layer.
+	
+				apt-get update && apt-get install -y curl \
+				&& apt-get clean \
+				&& rm -rf /var/lib/apt/list/*
+				
+				Here, each command will create it's own separate layer  
+	
+	ENV - It sets ENV variables 
+	
+	docker built -t ima_run-evc . & {to run this image as container} - docker run -itd --name count_run-env ima_run-evc & {to execute} docker exec -it count_run bash
+				
+	
+	docker built -t img_from . 
+	
+	EXPOSE : Is a type of documentation which inform docker about the port on which the container is listening - 
+	
+	LABEL : Metadata in form of LABEL 
+	
+Docker Image :
+ 
+Filter Docker : docker search --filter "is-official=true" Python
+Format Docker Search : docker search --format "table {{.Name}}\t{{.Description}}\t{{.IsOfficial}}" Python
+	
+What all questions Wipro Ask on your interview ? Can you share 
+
+AWS / ECS / Fargate / S3 / Recently Trace any issue with environment / - DevOps Engineer : Python  / Ansible - Terraform - 
+
+Docker Network :
+
+- One to One
+- One to Many
+- Many to Many
+- Native Docker Network Driver's { are used in creation of default or user defined network }
+   {
+		Host Network - Host eth0
+		Bridge Network - Default Network for Docker Container's 
+		Overlay Network - In case of Overlay Network, we do need to come out of cacone of single host docker infrastructure. In Industrial usage of Docker Community or enterprise edition you will most likely find cluster or cluster's of docker host which will run single, connected or at least relevant set of containerised application. Such an arragement in docker is know as Docker Swarm.
+									{ Multiple Host having multiple container, where any combination of communication might be necessary.
+									   So, while establishing or performing container to container communication out network driver cannot get away by just keeping track of container's IP. It also needs to route it's comminucation to proper host. Hence to solve this Overlay Network will have two layers of information :
+																																															{
+																																																Underlay Network Information : Which will contain data regarding SRC and DST of Host IP.
+																																																Overlay Network Information : Which will contain data about SRC and DST containers IP.
+																																															}
+										As a result the communication packet Header will consist of IP addresses of both SRC and DST Host and Containers respectively.
+									}
+	}
+	
+- docker network create -- driver bridge my-bridge
+- docker network create -- driver bridge --subnet=192.168.0.0/16 --ip-range=192.168.5.0/24 my-bridge1
+- docker network ls --filter driver=bridge
+- docker start my-ubuntu
+- docker network connect my-bridge1 (Network Name) my-ubuntu ( Container Name)
+- docker container inspect my-ubuntu
+
+- docker container run -itd --network host --name cont_ngnix ngnix:latest
+
+- docker container disconnect my-bridge1 my-ubuntu
+
+Docker Storage / Volume
+- Read / Write {
+								Mount Point Layers
+								Container Layer ( AUFS Branch )
+								* Hold temp or Volatile data
+								* if container dies or stops Volatile Data vanishes
+							}
+- Image ( Read only Layer ) {
+														CMD Layer
+														EXPOSE Layer
+														WORKDIR Layer
+														RUN Layer
+														Base Image Layer
+														bootfs
+													}
+													* Which hold permanent data and is never modified due to copy on right policy
+													
+In a volume, a container storage is completely isolated from the host file system. Although the data of volume is sorted in a specific directory of host.
+
+- docker volume create vol-nimish ( Naming the volume as vol-nimish )
+- docker run -d --volume vol -ubuntu:/tmp ubuntu ( Run a container using Ubuntu image and we're going to mount the volume vol-ubuntu on the container's tmp directory )
+- docker volume ls
+- docker volume ls --filter "dangling=true" ( It will list the volume which are not mounted to any container )
+
+- docker volume inspect volume-name
+
+- docker volume rm volume-name 
+
+- running a container from image : docker run -itd -- name cont-ubuntu --volume vol-ubuntu:/var/log ubuntu:latest
+	{
+		docker container inspect --format "{{json .Mounts}}" cont-ubuntu | python -m json.tool
+	}
+	
+Docker Compose
+
+YAML : YAML Ain't Markup Language
+	It has three basic datatypes:
+		- Scalars ( Strings & Numbers )
+		- Sequences ( Arrays & Lists )
+		- Mappings ( Hashes & Dictionaries )
+	
+/Home/nikkybalb0a/Docker/docker-compose.yaml : Default path of compose file is always present directory.
+
+version: '3.3'
+
+services:
+	db:
+		Image: mysql:5.7
+		container_name: mysql_database
+		volumes:
+			- db_data:/var/lib/mysql
+		restart: always
+		environment:
+			MYSQL_ROOT_PASSWORD:
+			MYSQL_DATABASE:
+			MYSQL_USER:
+			MYSQL_PASSWORD:
+			
+	wordpress:
+		depends_on:
+			- db
+		image: wordpress:latest
+		container_name: wd_frontend
+		volumes:
+			- wordpress_files:/var/www/html
+		port:
+			- "8000:80"
+		restart: always
+		environment:
+			WORDPRESS_DB_HOST: db:3306
+			WORDPRESS_DB_USER:
+			WORDPRESS_DB_PASSWORD:
+			
+volumes:
+	wordpress_files:
+	db_data:
+	
+- docker-compose up -d
+
+Let's work with MYSQL Database Container :: - docker exec -it sh mysql_database
+
+Let's run another instance of MySQL Container but this time as a client :: - docker run -it --link mysql_database:mysql --rm mysql sh -c ' exec mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_ADDR" -uroot -p"$MYSQL_ROOT_PASSWORD" '
+
+- docker network connect bridge mysql_database
+
+
+Docker Swarm
+
+SRE
+Nagios / appdynamics, ELK
+Linux, Weblogic/tomcat
+
+DevOps
+Solid understanding of CI/CD tools such as Jenkins , Ant,Maven etc.
+Deep understanding of SDLC
